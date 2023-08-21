@@ -14,6 +14,13 @@ const insertHeader = async (header) => {
       second: '2-digit',
       timeZoneName: 'short',
     }
+
+    const existingHeader = await HeaderModel.findOne({
+      blockNumber: Number(number),
+    })
+    if (existingHeader) {
+      return 'Header with the same blockNumber already exists' // or handle it as needed
+    }
     const blockTime = new Intl.DateTimeFormat('en-US', options).format(date)
     const Header = new HeaderModel({
       blockNumber: Number(number),

@@ -5,6 +5,8 @@ const logger = require('./logger/logger')
 const HeaderCtrl = require('./controller/header.controller')
 const BlockModelCtrl = require('./controller/block.controller')
 const TransactionCtrl = require('./controller/transaction.controller')
+const { getLatestBlockNumber } = require('./services/block.service')
+const blockModel = require('./models/block.model')
 
 const web3 = new Web3(
   new Web3.providers.WebsocketProvider(
@@ -20,12 +22,17 @@ async function getBlocks() {
     const newBlocksSubscription = await web3.eth.subscribe('newBlockHeaders')
 
     newBlocksSubscription.on('data', async (blockheader) => {
-      console.log(blockheader)
-      const blockDetail = await getBlockDetails(blockheader.number)
-      if (blockDetail != {}) {
-        await TransactionCtrl.txs_insert(blockDetail)
-          .then(HeaderCtrl.header_insert(blockheader))
-          .then(BlockModelCtrl.block_insert(blockDetail))
+      let latestBlockNumber = blockheader.number
+      let latestBlockNumberDB = await BlockModelCtrl.block_select()
+      if (latestBlockNumber > latestBlockNumberDB) {
+        for (let i = latestBlockNumberDB + 1; i <= latestBlockNumber; i++) {
+          let blockDetail = await getBlockDetails(i)
+          await TransactionCtrl.txs_insert(blockDetail)
+            .then(HeaderCtrl.header_insert(blockheader))
+            .then(BlockModelCtrl.block_insert(blockDetail))
+        }
+        // DB에 저장된 블록넘버를 최신 블록 넘버로 저장
+        latestBlockNumberDB = latestBlockNumber
       }
     })
   } catch (subscriptionError) {
@@ -33,9 +40,9 @@ async function getBlocks() {
   }
 }
 // block & txs detail
-async function getBlockDetails(blockIdentifier) {
+async function getBlockDetails(blockNumber) {
   try {
-    const block = await web3.eth.getBlock(blockIdentifier, true)
+    const block = await web3.eth.getBlock(blockNumber, true)
     if (block) {
       return block
     } else {

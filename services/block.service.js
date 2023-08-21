@@ -15,9 +15,19 @@ const insertBlock = async (blockDetail) => {
       stateRoot,
       transactions,
     } = blockDetail
-    const burntFees = baseFeePerGas * gasUsed
+
+    // Check if a block with the same blockNumber exists
+    const existingBlock = await BlockModel.findOne({
+      blockNumber: Number(number),
+    })
+
+    if (existingBlock) {
+      return 'Block with the same blockNumber already exists' // or handle it as needed
+    }
+
+    let burntFees = BigInt(baseFeePerGas) * BigInt(gasUsed)
     let txHashArr = []
-    for (tx of transactions) {
+    for (const tx of Object.values(transactions)) {
       txHashArr.push(tx.hash)
     }
     const Block = new BlockModel({
@@ -41,6 +51,23 @@ const insertBlock = async (blockDetail) => {
   }
 }
 
+const getLatestBlockNumber = async () => {
+  try {
+    const latestBlock = await BlockModel.findOne()
+      .sort({ blockNumber: -1 })
+      .limit(1)
+    if (latestBlock) {
+      return latestBlock.blockNumber
+    } else {
+      return null // No blocks found in the database
+    }
+  } catch (e) {
+    logger.debug('getLatestBlockNumber error: ', e)
+    throw Error(e)
+  }
+}
+
 module.exports = {
   insertBlock,
+  getLatestBlockNumber,
 }

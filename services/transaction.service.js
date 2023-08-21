@@ -15,8 +15,14 @@ const insertTxs = async (blockDetail) => {
   }
   const blockTime = new Intl.DateTimeFormat('en-US', options).format(date)
   try {
-    for (let tx of transactions) {
+    for (const tx of Object.values(transactions)) {
       const { hash, from, to, gasPrice, value, blockHash, blockNumber } = tx
+      const existingTx = await TransactionModel.findOne({
+        hash: hash,
+      })
+      if (existingTx) {
+        return 'Tx with the same hash already exists' // or handle it as needed
+      }
 
       const receipt = await web3.eth.getTransactionReceipt(hash)
       let status

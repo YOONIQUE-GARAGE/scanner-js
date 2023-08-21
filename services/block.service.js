@@ -1,4 +1,4 @@
-const { BlockModel } = require("../models/index");
+const { BlockModel } = require('../models/index')
 
 // insertBlock
 const insertBlock = async (blockDetail) => {
@@ -14,11 +14,11 @@ const insertBlock = async (blockDetail) => {
       hash,
       stateRoot,
       transactions,
-    } = blockDetail;
-    const burntFees = baseFeePerGas * gasUsed;
-    let txHashArr = [];
+    } = blockDetail
+    const burntFees = baseFeePerGas * gasUsed
+    let txHashArr = []
     for (tx of transactions) {
-      txHashArr.push(tx.hash);
+      txHashArr.push(tx.hash)
     }
     const Block = new BlockModel({
       blockNumber: Number(number),
@@ -32,14 +32,15 @@ const insertBlock = async (blockDetail) => {
       blockHash: hash,
       stateRoot,
       transactions: txHashArr,
-    });
-    return await Block.save();
+    })
+    await Block.save()
+    return 'Insert Block Success'
   } catch (e) {
-    logger.debug("blockService error: ", e);
-    throw Error(e);
+    logger.debug('blockService error: ', e)
+    throw Error(e)
   }
-};
+}
 
 module.exports = {
   insertBlock,
-};
+}
